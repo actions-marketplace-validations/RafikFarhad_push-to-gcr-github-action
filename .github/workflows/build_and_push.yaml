@@ -7,9 +7,24 @@ on:
     branches:
       - master
 jobs:
+  metadata:
+    name: Workflow metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Job summary
+        run: |
+          echo "## Workflow Run Info" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | ----- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | [\`${GITHUB_SHA::7}\`](https://github.com/${{ github.repository }}/commit/${{ github.sha }}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Event** | \`${{ github.event_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Actor** | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+
   # example with Workload Identity Federation
   build-and-push-to-gcr-workload-identity:
     name: Build & push - with workload identity
+    needs: metadata
     runs-on: ubuntu-latest
     permissions: # <- this section is needed for workload identity
       contents: 'read'
@@ -24,7 +39,7 @@ jobs:
           service_account: push-to-gcr-storage-object-adm@oss-projects-487304.iam.gserviceaccount.com
       - name: Building and pushing the image
         uses: ./
-        # uses: RafikFarhad/push-to-gcr-github-action@v5-rc1 # <- use this on your workflow
+        # uses: RafikFarhad/push-to-gcr-github-action@v5 # <- use this on your workflow
         with:
           # gcloud_service_key: ${{ secrets.JSON_GCLOUD_SERVICE_ACCOUNT_JSON }} # <- not needed when used with google-github-actions/auth@v2
           registry: gcr.io
@@ -37,6 +52,7 @@ jobs:
   # example with gcloud service account key
   build-and-push-to-gcr-service-account:
     name: Build & push - with service account
+    needs: metadata
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -47,7 +63,7 @@ jobs:
           credentials_json: '${{ secrets.B64_GCLOUD_SERVICE_ACCOUNT_JSON }}'
       - name: Building and pushing the image
         uses: ./
-        # uses: RafikFarhad/push-to-gcr-github-action@v5-rc1 # <- use this on your workflow
+        # uses: RafikFarhad/push-to-gcr-github-action@v5 # <- use this on your workflow
         with:
           # gcloud_service_key: ${{ secrets.JSON_GCLOUD_SERVICE_ACCOUNT_JSON }} # <- not needed when used with google-github-actions/auth@v2
           registry: gcr.io
@@ -57,15 +73,16 @@ jobs:
           dockerfile: ./test/Dockerfile.test
           context: ./test
           target: build
-  # example with gcloud service account key, except using google-github-actions/auth step. the login is handled by this action 
+  # example with gcloud service account key, except using google-github-actions/auth step. the login is handled by this action
   build-and-push-to-gcr-without-gcloud-auth-action:
     name: Build & push - without gcloud auth action
+    needs: metadata
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - name: Building and pushing the image
         uses: ./
-        # uses: RafikFarhad/push-to-gcr-github-action@v5-rc1 # <- use this on your workflow
+        # uses: RafikFarhad/push-to-gcr-github-action@v5 # <- use this on your workflow
         with:
           gcloud_service_key: "${{ secrets.JSON_GCLOUD_SERVICE_ACCOUNT_JSON }}"
           registry: gcr.io
@@ -78,6 +95,7 @@ jobs:
   # example with push-only
   push-only-image:
     name: Push only - with workload identity
+    needs: metadata
     runs-on: ubuntu-latest
     permissions: # <- this section is needed for workload identity
       contents: 'read'
@@ -96,7 +114,7 @@ jobs:
           service_account: push-to-gcr-storage-object-adm@oss-projects-487304.iam.gserviceaccount.com
       - name: Pushing the image
         uses: ./
-        # uses: RafikFarhad/push-to-gcr-github-action@v5-rc1 # <- use this on your workflow
+        # uses: RafikFarhad/push-to-gcr-github-action@v5 # <- use this on your workflow
         with:
           # gcloud_service_key: ${{ secrets.JSON_GCLOUD_SERVICE_ACCOUNT_JSON }} # <- not needed when used with google-github-actions/auth@v2
           registry: gcr.io
